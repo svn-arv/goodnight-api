@@ -5,7 +5,15 @@
 
 # User Seeds
 if User.last.blank?
-  100.times do |i|
+  100.times do
     User.create(name: Faker::Name.name)
+  end
+end
+
+# Sleep Record Seeds
+if SleepRecord.last.blank? && User.last.present?
+  users = User.all
+  100.times do |i|
+    SleepRecord.create(user_id: users.sample.id, start_at: Time.zone.now - i.days, end_at: Time.zone.now - i.days + rand(10).hours)
   end
 end
