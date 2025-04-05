@@ -5,7 +5,7 @@
 #  id                  :integer          not null, primary key
 #  duration_in_seconds :integer
 #  end_at              :datetime
-#  start_at            :datetime
+#  start_at            :datetime         not null
 #  created_at          :datetime         not null
 #  updated_at          :datetime         not null
 #  user_id             :integer          not null
