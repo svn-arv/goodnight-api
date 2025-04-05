@@ -14,7 +14,7 @@ gem 'aasm', '~> 5.5.0'
 # Authentication and authorization for Rails [https://github.com/heartcombo/devise]
 gem 'devise'
 # History and versioning for Rails models [https://github.com/paper-trail-gem/paper_trail]
-gem 'paper_trail', '~> 15.2'
+gem 'paper_trail', '~> 16.0'
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem 'tzinfo-data', platforms: %i[windows jruby]
