@@ -24,7 +24,7 @@ gem 'bootsnap', require: false
 
 group :development, :test do
   gem 'annotate'
-  gem 'dotenv-rails', '~> 2.8.0'
+  gem 'dotenv-rails', '~> 3.1.7'
   gem 'factory_bot_rails'
   # Static analysis for security vulnerabilities [https://brakemanscanner.org/]
   gem 'brakeman', require: false
