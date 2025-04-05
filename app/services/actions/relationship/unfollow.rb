@@ -4,7 +4,7 @@ module Actions
       def self.call(user:, following:)
         return unless user && following && user != following
 
-        Relationship.find_by(user_id: user.id, following_id: following.id)&.destroy
+        ::Relationship.find_by(user_id: user.id, following_id: following.id)&.destroy
       end
     end
   end
