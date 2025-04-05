@@ -17,6 +17,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_04_05_083749) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["following_id"], name: "index_relationships_on_following_id"
+    t.index ["user_id", "following_id"], name: "index_relationships_on_user_id_and_following_id", unique: true
     t.index ["user_id"], name: "index_relationships_on_user_id"
   end
 
