@@ -9,5 +9,10 @@ module Actions
         super
       end
     end
+
+    def paginate(collection, page:, per_page:)
+      pagination = Helpers::Pagination.new(page: page, per_page: per_page)
+      pagination.paginate(collection)
+    end
   end
 end
