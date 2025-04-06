@@ -53,4 +53,7 @@ group :development, :test do
   gem 'rubocop-rspec_rails'
   # Code coverage for Ruby [https://simplecov.org/]
   gem 'simplecov'
+
+  # Time related helpers for testing [https://github.com/travisjeffery/timecop]
+  gem 'timecop'
 end

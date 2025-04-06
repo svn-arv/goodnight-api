@@ -1,25 +1,29 @@
 require 'rails_helper'
 
-RSpec.describe Relationship do
-  let(:relationship) { create(:relationship) }
+RSpec.describe Relationship, type: :model do
+  let(:first_user) { create(:user) }
+  let(:second_user) { create(:user) }
+  let!(:relationship) { create(:relationship, user: first_user, following: second_user) }
 
-  it 'enforces unique user-following combination' do
-    duplicate = described_class.new(user: relationship.user, following: relationship.following)
-    expect(duplicate).not_to be_valid
-    expect(duplicate.errors[:user_id]).to include('has already been taken')
+  describe '.create' do
+    let(:attributes) { { user: relationship.user, following: relationship.following } }
+
+    it 'enforces unique user-following combination' do
+      expect { described_class.create!(attributes) }.to raise_error(ActiveRecord::RecordNotUnique)
+    end
   end
 
   describe 'scopes' do
     it 'returns followers for a user' do
-      followers = described_class.followers(user2)
+      followers = described_class.followers(second_user)
       expect(followers.count).to eq(1)
-      expect(followers.first.user).to eq(user1)
+      expect(followers.first.user).to eq(first_user)
     end
 
     it 'returns followings for a user' do
-      followings = described_class.followings(user1)
+      followings = described_class.followings(first_user)
       expect(followings.count).to eq(1)
-      expect(followings.first.following).to eq(user2)
+      expect(followings.first.following).to eq(second_user)
     end
   end
 end

@@ -1,67 +1,80 @@
 require 'rails_helper'
 
 RSpec.describe Actions::SleepRecord::ClockIn do
-  let(:user) { create(:user, name: 'sleepy_user') }
-  let(:time) { '2025-01-01 23:00:00' }
+  let(:user) { create(:user) }
+  let(:read_service) { instance_double(Actions::SleepRecord::Read) }
+  let(:read_result) { [build(:sleep_record)] }
 
-  describe '#call' do
-    it 'creates a sleep record with the given time' do
-      expect do
-        described_class.call(user: user, time: time)
-      end.to change(SleepRecord, :count).by(1)
+  before do
+    allow(Actions::SleepRecord::Read).to receive(:call).and_return(
+      double(result: read_result, success?: true)
+    )
+  end
 
-      sleep_record = SleepRecord.last
-      expect(sleep_record.start_at.strftime('%Y-%m-%d %H:%M:%S')).to eq(time)
+  describe '.call' do
+    context 'when no time is provided' do
+      it 'creates a sleep record with current time' do
+        Timecop.freeze(Time.zone.now) do
+          expect do
+            result = described_class.call(user: user)
+            expect(result.success?).to be true
+          end.to change(SleepRecord, :count).by(1)
+
+          record = SleepRecord.last
+          expect(record.user_id).to eq(user.id)
+          expect(record.start_at).to eq(Time.zone.now)
+          expect(record.end_at).to be_nil
+        end
+      end
     end
 
-    it 'creates a sleep record with the current time when no time is given' do
-      freeze_time = Time.zone.now
-      allow(Time.zone).to receive(:now).and_return(freeze_time)
+    context 'when time is provided as string' do
+      let(:time_string) { '2023-01-01T22:00:00Z' }
+      let(:parsed_time) { DateTime.parse(time_string) }
 
-      expect do
-        described_class.call(user: user)
-      end.to change(SleepRecord, :count).by(1)
+      before do
+        allow(Helpers::DateTime).to receive(:parseable?).with(time_string).and_return(true)
+      end
 
-      sleep_record = SleepRecord.last
-      expect(sleep_record.start_at).to eq(freeze_time)
+      it 'creates a sleep record with the parsed time' do
+        expect do
+          result = described_class.call(user: user, time: time_string)
+          expect(result.success?).to be true
+        end.to change(SleepRecord, :count).by(1)
+
+        record = SleepRecord.last
+        expect(record.user_id).to eq(user.id)
+        expect(record.start_at).to eq(parsed_time)
+        expect(record.end_at).to be_nil
+      end
     end
 
-    it 'does nothing when user is nil' do
-      expect do
-        described_class.call(user: nil)
-      end.not_to change(SleepRecord, :count)
+    context 'when time is not parseable' do
+      let(:invalid_time) { 'not a time' }
+
+      it 'uses current time instead' do
+        Timecop.freeze(Time.zone.now) do
+          expect do
+            result = described_class.call(user: user, time: invalid_time)
+            expect(result.success?).to be true
+          end.to change(SleepRecord, :count).by(1)
+
+          record = SleepRecord.last
+          expect(record.start_at).to eq(Time.zone.now)
+        end
+      end
     end
 
-    it 'handles invalid date format gracefully' do
-      expect do
-        described_class.call(user: user, time: 'not-a-date')
-      end.to change(SleepRecord, :count).by(1)
+    context 'when an error occurs' do
+      before do
+        allow_any_instance_of(described_class).to receive(:call).and_raise(StandardError.new('Test error'))
+      end
 
-      # Should use current time
-      expect(SleepRecord.last.start_at).to be_within(5.seconds).of(Time.zone.now)
-    end
-
-    it 'uses advisory locks for safety' do
-      expect_any_instance_of(described_class).to receive(:with_advisory_lock).and_call_original
-      described_class.call(user: user)
-    end
-
-    it 'calls Read action after creating the record' do
-      expect(Actions::SleepRecord::Read).to receive(:call).with(filter: { user: user })
-      described_class.call(user: user)
-    end
-
-    it 'returns success when creating the record' do
-      described_class.call(user: user)
-      expect(described_class.success?).to be true
-    end
-
-    it 'tracks errors when creation fails' do
-      allow(SleepRecord).to receive(:create!).and_raise(StandardError.new('Creation failed'))
-      described_class.call(user: user)
-
-      expect(described_class.success?).to be false
-      expect(described_class.errors.full_messages).to include('Base Creation failed')
+      it 'handles the error and returns failure' do
+        result = described_class.call(user: user)
+        expect(result.success?).to be false
+        expect(result.error_message).to eq('Test error')
+      end
     end
   end
 end

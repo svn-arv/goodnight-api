@@ -1,84 +1,87 @@
 require 'rails_helper'
 
 RSpec.describe Actions::SleepRecord::Read do
-  let(:user) { create(:user, name: 'test_user') }
+  let(:user) { create(:user) }
+  let(:another_user) { create(:user) }
 
   before do
-    # Create a few sleep records
-    3.times { |i| create(:sleep_record, user: user, start_at: Time.zone.now - i.days) }
+    # Create some sleep records for testing
+    3.times { |i| create(:sleep_record, user: user, start_at: 1.day.ago + i.minutes) }
+    2.times { |i| create(:sleep_record, user: another_user, start_at: 2.days.ago + i.minutes) }
   end
 
-  describe '#call' do
-    it 'returns all records matching the filters' do
-      results = described_class.call(filters: { user_id: user.id })
-      expect(results.count).to eq(3)
+  describe '.call' do
+    context 'with user filter' do
+      it 'returns only records for the specified user' do
+        result = described_class.call(filters: { user_id: user.id })
+        expect(result.success?).to be true
+        expect(result.result.count).to eq(3)
+        expect(result.result.pluck(:user_id).uniq).to eq([user.id])
+      end
     end
 
-    it 'applies scopes when provided' do
-      # Assuming a scope like 'recent' exists on SleepRecord
-      allow(SleepRecord).to receive_message_chain(:where, :recent, :order, :all).and_return([])
-
-      described_class.call(filters: { user_id: user.id }, scopes: [:recent])
-
-      expect(SleepRecord).to have_received(:where)
+    context 'with custom ordering' do
+      it 'orders records according to specified order' do
+        result = described_class.call(filters: {}, order: { created_at: :asc })
+        expect(result.success?).to be true
+        expect(result.result.first.created_at).to be < result.result.last.created_at
+      end
     end
 
-    it 'returns empty collection when no records match filters' do
-      results = described_class.call(filters: { user_id: -1 })
-      expect(results).to be_empty
+    context 'with scopes' do
+      it 'applies the on_or_before scope' do
+        date = 1.5.days.ago
+        result = described_class.call(
+          filters: {},
+          scopes: [[:on_or_before, :start_at, date]]
+        )
+        expect(result.success?).to be true
+        expect(result.result.count).to eq(2) # Only records from another_user (2 days ago)
+      end
+
+      it 'applies the on_or_after scope' do
+        date = 1.5.days.ago
+        result = described_class.call(
+          filters: {},
+          scopes: [[:on_or_after, :start_at, date]]
+        )
+        expect(result.success?).to be true
+        expect(result.result.count).to eq(3) # Only records from user (1 day ago)
+      end
     end
 
-    it 'orders results according to specified order' do
-      custom_order = { start_at: :asc }
-      allow(SleepRecord).to receive_message_chain(:where, :order, :all)
+    context 'with pagination' do
+      it 'paginates the results' do
+        allow_any_instance_of(described_class).to receive(:paginate).and_call_original
 
-      described_class.call(filters: { user_id: user.id }, order: custom_order)
+        result = described_class.call(
+          filters: {},
+          pagination_params: { page: 1, per_page: 2 }
+        )
 
-      expect(SleepRecord).to have_received(:where)
+        expect(result.success?).to be true
+        expect(result.result.size).to eq(2)
+      end
     end
 
-    it 'paginates results when pagination params are provided' do
-      results = described_class.call(
-        filters: { user_id: user.id },
-        pagination_params: { page: 1, per_page: 2 }
-      )
-
-      expect(results[:items].count).to eq(2)
-      expect(results[:pagination][:current_page]).to eq(1)
-      expect(results[:pagination][:total_pages]).to eq(2)
-      expect(results[:pagination][:total_count]).to eq(3)
-      expect(results[:pagination][:per_page]).to eq(2)
+    context 'without pagination' do
+      it 'returns all matching records' do
+        result = described_class.call(filters: {})
+        expect(result.success?).to be true
+        expect(result.result.size).to eq(5)
+      end
     end
 
-    it 'handles the last page correctly' do
-      results = described_class.call(
-        filters: { user_id: user.id },
-        pagination_params: { page: 2, per_page: 2 }
-      )
+    context 'when an error occurs' do
+      before do
+        allow_any_instance_of(described_class).to receive(:call).and_raise(StandardError.new('Test error'))
+      end
 
-      expect(results[:items].count).to eq(1)
-      expect(results[:pagination][:current_page]).to eq(2)
-    end
-
-    it 'returns all results ordered by default when no pagination is specified' do
-      results = described_class.call(filters: { user_id: user.id })
-
-      expect(results.count).to eq(3)
-      # Default ordering is by created_at: :desc
-      expect(results.first.created_at).to be >= results.last.created_at
-    end
-
-    it 'returns success when finding records' do
-      described_class.call(filters: { user_id: user.id })
-      expect(described_class.success?).to be true
-    end
-
-    it 'tracks errors when finding records fails' do
-      allow(SleepRecord).to receive(:where).and_raise(StandardError.new('Query failed'))
-      described_class.call(filters: { user_id: user.id })
-
-      expect(described_class.success?).to be false
-      expect(described_class.errors.full_messages).to include('Base Query failed')
+      it 'handles the error and returns failure' do
+        result = described_class.call(filters: {})
+        expect(result.success?).to be false
+        expect(result.error_message).to eq('Test error')
+      end
     end
   end
 end

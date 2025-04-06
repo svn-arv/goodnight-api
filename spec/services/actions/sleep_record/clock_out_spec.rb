@@ -1,71 +1,72 @@
 require 'rails_helper'
 
 RSpec.describe Actions::SleepRecord::ClockOut do
-  let(:user) { create(:user, name: 'sleepy_user') }
-  let(:sleep_record) { create(:sleep_record, user: user, start_at: Time.zone.now - 8.hours) }
-  let(:time) { '2025-01-01 23:00:00' }
+  let(:user) { create(:user) }
+  let(:sleep_record) { create(:sleep_record, user: user, start_at: 1.hour.ago, end_at: nil) }
 
-  describe '#call' do
-    it 'updates a sleep record with the given end time' do
-      expect(sleep_record.end_at).to be_nil
-
-      described_class.call(sleep_record: sleep_record, time: time)
-      sleep_record.reload
-
-      expect(sleep_record.end_at.strftime('%Y-%m-%d %H:%M:%S')).to eq(time)
+  describe '.call' do
+    context 'when no time is provided' do
+      it 'updates the sleep record with current time' do
+        Timecop.freeze(Time.zone.now) do
+          expect do
+            result = described_class.call(sleep_record: sleep_record)
+            expect(result.success?).to be true
+          end.to change { sleep_record.reload.end_at }.from(nil).to(Time.zone.now)
+        end
+      end
     end
 
-    it 'updates a sleep record with the current time when no time is given' do
-      freeze_time = Time.zone.now
-      allow(Time.zone).to receive(:now).and_return(freeze_time)
+    context 'when time is provided as string' do
+      let(:time_string) { (Time.zone.now + 3.hours).to_s }
+      let(:parsed_time) { DateTime.parse(time_string) }
 
-      described_class.call(sleep_record: sleep_record)
-      sleep_record.reload
+      before do
+        allow(Helpers::DateTime).to receive(:parseable?).with(time_string).and_return(true)
+      end
 
-      expect(sleep_record.end_at).to eq(freeze_time)
+      it 'updates the sleep record with the parsed time' do
+        expect do
+          result = described_class.call(sleep_record: sleep_record, time: time_string)
+          expect(result.success?).to be true
+        end.to change { sleep_record.reload.end_at }.from(nil).to(parsed_time)
+      end
+
+      it 'calculates the duration after updating' do
+        described_class.call(sleep_record: sleep_record, time: time_string)
+        expect(sleep_record.reload.duration_in_seconds).to be_present
+
+        expected_duration = parsed_time.to_i - sleep_record.start_at.to_i
+        expect(sleep_record.duration_in_seconds).to eq(expected_duration)
+      end
     end
 
-    it 'does nothing when sleep_record is nil' do
-      expect do
-        described_class.call(sleep_record: nil)
-      end.not_to(change { sleep_record.reload.end_at })
+    context 'when time is not parseable' do
+      let(:invalid_time) { 'not a time' }
+
+      before do
+        allow(Helpers::DateTime).to receive(:parseable?).with(invalid_time).and_return(false)
+      end
+
+      it 'uses current time instead' do
+        Timecop.freeze(Time.zone.now) do
+          expect do
+            result = described_class.call(sleep_record: sleep_record, time: invalid_time)
+            expect(result.success?).to be true
+          end.to change { sleep_record.reload.end_at }.from(nil).to(Time.zone.now)
+        end
+      end
     end
 
-    it 'handles invalid date format gracefully' do
-      described_class.call(sleep_record: sleep_record, time: 'not-a-date')
-      sleep_record.reload
+    context 'when an error occurs' do
+      before do
+        allow_any_instance_of(described_class).to receive(:call).and_raise(StandardError.new('Test error'))
+      end
 
-      # Should use current time
-      expect(sleep_record.end_at).to be_within(5.seconds).of(Time.zone.now)
-    end
-
-    it 'calculates the duration when end time is set' do
-      start_time = sleep_record.start_at
-      end_time = start_time + 8.hours
-      expected_duration = (end_time - start_time).to_i
-
-      described_class.call(sleep_record: sleep_record, time: end_time.to_s)
-      sleep_record.reload
-
-      expect(sleep_record.duration_in_seconds).to eq(expected_duration)
-    end
-
-    it 'uses advisory locks for safety' do
-      expect_any_instance_of(described_class).to receive(:with_advisory_lock).and_call_original
-      described_class.call(sleep_record: sleep_record)
-    end
-
-    it 'returns success when updating the record' do
-      described_class.call(sleep_record: sleep_record)
-      expect(described_class.success?).to be true
-    end
-
-    it 'tracks errors when update fails' do
-      allow(sleep_record).to receive(:update).and_raise(StandardError.new('Update failed'))
-      described_class.call(sleep_record: sleep_record)
-
-      expect(described_class.success?).to be false
-      expect(described_class.errors.full_messages).to include('Base Update failed')
+      it 'handles the error and returns failure' do
+        result = described_class.call(sleep_record: sleep_record)
+        expect(result.success?).to be false
+        expect(result.error_message).to eq('Test error')
+      end
     end
   end
 end

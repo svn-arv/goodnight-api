@@ -23,7 +23,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_04_05_083749) do
 
   create_table "sleep_records", force: :cascade do |t|
     t.integer "user_id", null: false
-    t.datetime "start_at"
+    t.datetime "start_at", null: false
     t.datetime "end_at"
     t.integer "duration_in_seconds"
     t.datetime "created_at", null: false
@@ -36,6 +36,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_04_05_083749) do
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_users_on_name"
   end
 
   add_foreign_key "relationships", "users"
