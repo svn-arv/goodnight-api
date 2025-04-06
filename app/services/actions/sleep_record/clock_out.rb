@@ -1,7 +1,7 @@
 module Actions
   module SleepRecord
-    class ClockOut
-      def self.call(sleep_record:, time: nil)
+    class ClockOut < Actions::Base
+      def call(sleep_record:, time: nil)
         return unless sleep_record
 
         time = DateTime.parse(time) if time.present? && Helpers::DateTime.parseable?(time)
