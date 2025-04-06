@@ -2,7 +2,7 @@ module Actions
   module SleepRecord
     class ClockOut < Actions::Base
       def call(sleep_record:, time: nil)
-        with_advisory_lock(SleepRecord) do
+        with_advisory_lock(::SleepRecord) do
           return unless sleep_record
 
           time = DateTime.parse(time) if time.present? && Helpers::DateTime.parseable?(time)
