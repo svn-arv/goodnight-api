@@ -12,4 +12,6 @@
 #  index_users_on_name  (name)
 #
 class User < ApplicationRecord
+  has_many :sleep_records
+  has_many :relationships
 end

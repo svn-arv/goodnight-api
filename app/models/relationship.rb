@@ -23,6 +23,16 @@ class Relationship < ApplicationRecord
   belongs_to :user
   belongs_to :following, class_name: 'User'
 
+  validate :not_self_following
+
   scope :followers, ->(user) { where(following: user) }
   scope :followings, ->(user) { where(user: user) }
+
+  private
+
+  def not_self_following
+    return unless user_id == following_id
+
+    errors.add(:following_id, "can't be the same as user")
+  end
 end

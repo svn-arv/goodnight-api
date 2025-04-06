@@ -20,11 +20,15 @@
 #  user_id  (user_id => users.id)
 #
 class SleepRecord < ApplicationRecord
+  belongs_to :user
   after_initialize :calculate_duration
+
+  scope :on_or_before, ->(filter, date) { where("#{filter} <= ?", date) }
+  scope :on_or_after, ->(filter, date) { where("#{filter} >= ?", date) }
 
   private
 
   def calculate_duration
-    self.duration_in_seconds = (end_at - start_at).to_i if end_at && start_at
+    self.duration_in_seconds = (end_at.to_i - start_at.to_i) if end_at && start_at
   end
 end
