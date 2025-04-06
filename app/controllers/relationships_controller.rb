@@ -1,51 +1,49 @@
-class RelationshipsController < ApplicationController
-  before_action :set_relationship, only: %i[ show update destroy ]
+class RelationshipsController < BaseController
+  before_action :set_following_user, only: %i[follow unfollow]
 
-  # GET /relationships
-  def index
-    @relationships = Relationship.all
+  # POST /follow
+  def follow
+    action_result = Actions::Relationship::Follow.call(user: @current_user, following: @following_user)
 
-    render json: @relationships
-  end
-
-  # GET /relationships/1
-  def show
-    render json: @relationship
-  end
-
-  # POST /relationships
-  def create
-    @relationship = Relationship.new(relationship_params)
-
-    if @relationship.save
-      render json: @relationship, status: :created, location: @relationship
+    if action_result.success?
+      render json: action_result.result
     else
-      render json: @relationship.errors, status: :unprocessable_entity
+      render json: action_result.errors, status: :unprocessable_entity
     end
   end
 
-  # PATCH/PUT /relationships/1
-  def update
-    if @relationship.update(relationship_params)
-      render json: @relationship
+  # POST /unfollow
+  def unfollow
+    action_result = Actions::Relationship::Unfollow.call(user: @current_user, following: @following_user)
+
+    if action_result.success?
+      render json: action_result.result
     else
-      render json: @relationship.errors, status: :unprocessable_entity
+      render json: action_result.errors, status: :unprocessable_entity
     end
   end
 
-  # DELETE /relationships/1
-  def destroy
-    @relationship.destroy!
+  # GET /following_sleep_records
+  def following_sleep_records
+    relationship_result = Actions::Relationship::Read.call(filters: { user: @current_user })
+    following_ids = relationship_result.result.pluck(:following_id)
+
+    action_result = Actions::SleepRecord::Read.call(
+      filters: { user_id: following_ids },
+      scopes: [[:on_or_after, :start_at, 1.week.ago]],
+      order: { duration_in_seconds: :desc }
+    )
+
+    render json: action_result.result
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_relationship
-      @relationship = Relationship.find(params[:id])
-    end
 
-    # Only allow a list of trusted parameters through.
-    def relationship_params
-      params.require(:relationship).permit(:user_id, :followers_id, :followings_id)
-    end
+  def set_following_user
+    @following_user = User.find(follow_params[:following_id])
+  end
+
+  def follow_params
+    params.permit(:following_id)
+  end
 end

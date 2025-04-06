@@ -1,51 +1,37 @@
-class SleepRecordsController < ApplicationController
-  before_action :set_sleep_record, only: %i[ show update destroy ]
+class SleepRecordsController < BaseController
+  before_action :set_sleep_record, only: %i[clock_out]
 
-  # GET /sleep_records
-  def index
-    @sleep_records = SleepRecord.all
+  # POST /clock_in
+  def clock_in
+    action_result = Actions::SleepRecord::ClockIn.call(user: @current_user, time: sleep_record_params[:at])
 
-    render json: @sleep_records
-  end
-
-  # GET /sleep_records/1
-  def show
-    render json: @sleep_record
-  end
-
-  # POST /sleep_records
-  def create
-    @sleep_record = SleepRecord.new(sleep_record_params)
-
-    if @sleep_record.save
-      render json: @sleep_record, status: :created, location: @sleep_record
+    if action_result.success?
+      render json: action_result.result
     else
-      render json: @sleep_record.errors, status: :unprocessable_entity
+      render json: action_result.errors, status: :unprocessable_entity
     end
   end
 
-  # PATCH/PUT /sleep_records/1
-  def update
-    if @sleep_record.update(sleep_record_params)
-      render json: @sleep_record
-    else
-      render json: @sleep_record.errors, status: :unprocessable_entity
-    end
-  end
+  # POST /clock_out
+  def clock_out
+    action_result = Actions::SleepRecord::ClockOut.call(sleep_record: @sleep_record, time: sleep_record_params[:at])
 
-  # DELETE /sleep_records/1
-  def destroy
-    @sleep_record.destroy!
+    if action_result.success?
+      render json: action_result.result
+    else
+      render json: action_result.errors, status: :unprocessable_entity
+    end
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_sleep_record
-      @sleep_record = SleepRecord.find(params[:id])
-    end
 
-    # Only allow a list of trusted parameters through.
-    def sleep_record_params
-      params.require(:sleep_record).permit(:sleep_start_at, :sleep_end_at, :sleep_duration_in_seconds, :awake_start_at, :awake_end_at, :awake_duration_in_seconds)
-    end
+  # Use callbacks to share common setup or constraints between actions.
+  def set_sleep_record
+    @sleep_record = SleepRecord.find(params[:sleep_record_id])
+  end
+
+  # Only allow a list of trusted parameters through.
+  def sleep_record_params
+    params.permit(:at)
+  end
 end
