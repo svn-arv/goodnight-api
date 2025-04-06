@@ -1,7 +1,21 @@
 module Actions
   class Base
+    class << self
+      attr_reader :errors, :result
+
+      def success?
+        @success
+      end
+    end
+
     def self.call(*, **)
-      new.call(*, **)
+      @result = new.call(*, **)
+      self
+    rescue StandardError => e
+      @errors = ActiveModel::Errors.new(self).add(:base, e.message)
+      self
+    ensure
+      @success = @errors.blank?
     end
 
     def call(*, **)
