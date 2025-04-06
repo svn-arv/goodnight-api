@@ -20,6 +20,14 @@ gem 'tzinfo-data', platforms: %i[windows jruby]
 # Reduces boot times through caching; required in config/boot.rb
 gem 'bootsnap', require: false
 
+# Pagination for Rails [https://github.com/kaminari/kaminari]
+gem 'kaminari'
+
+# DB Locking for Rails [https://github.com/ankane/with_advisory_lock]
+# SQLite: File Locks
+# PostgreSQL & MySQL: Table/Row Locks
+gem 'with_advisory_lock', '~> 5.1.0'
+
 group :development, :test do
   gem 'annotate'
   gem 'dotenv-rails', '~> 3.1.7'

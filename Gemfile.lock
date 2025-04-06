@@ -1,8 +1,6 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    aasm (5.5.0)
-      concurrent-ruby (~> 1.0)
     actioncable (7.2.2.1)
       actionpack (= 7.2.2.1)
       activesupport (= 7.2.2.1)
@@ -128,6 +126,18 @@ GEM
       reline (>= 0.4.2)
     jaro_winkler (1.6.0)
     json (2.10.2)
+    kaminari (1.2.2)
+      activesupport (>= 4.1.0)
+      kaminari-actionview (= 1.2.2)
+      kaminari-activerecord (= 1.2.2)
+      kaminari-core (= 1.2.2)
+    kaminari-actionview (1.2.2)
+      actionview
+      kaminari-core (= 1.2.2)
+    kaminari-activerecord (1.2.2)
+      activerecord
+      kaminari-core (= 1.2.2)
+    kaminari-core (1.2.2)
     kramdown (2.5.1)
       rexml (>= 3.3.9)
     kramdown-parser-gfm (1.1.0)
@@ -363,6 +373,9 @@ GEM
       base64
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.5)
+    with_advisory_lock (5.1.0)
+      activerecord (>= 6.1)
+      zeitwerk (>= 2.6)
     yard (0.9.37)
     yard-solargraph (0.1.0)
       yard (~> 0.9)
@@ -381,7 +394,6 @@ PLATFORMS
   x86_64-linux-musl
 
 DEPENDENCIES
-  aasm (~> 5.5.0)
   annotate
   bootsnap
   brakeman
@@ -390,6 +402,7 @@ DEPENDENCIES
   dotenv-rails (~> 3.1.7)
   factory_bot_rails
   faker
+  kaminari
   paper_trail (~> 16.0)
   puma (>= 5.0)
   rails (~> 7.2.1)
@@ -406,6 +419,7 @@ DEPENDENCIES
   sprockets-rails
   sqlite3 (>= 1.4)
   tzinfo-data
+  with_advisory_lock (~> 5.1.0)
 
 BUNDLED WITH
    2.5.21
