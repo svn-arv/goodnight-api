@@ -3,7 +3,7 @@ module Helpers
     def self.parseable?(string)
       raise StandardError unless string.instance_of?(String)
 
-      DateTime.try(:parse, string)
+      ::DateTime.parse(string)
       true
     rescue StandardError
       false

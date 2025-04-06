@@ -6,13 +6,17 @@ module Actions
       def success?
         @success
       end
+
+      def error_message
+        @errors.options[:message]
+      end
     end
 
     def self.call(*, **)
       @result = new.call(*, **)
       self
     rescue StandardError => e
-      @errors = ActiveModel::Errors.new(self).add(:base, e.message)
+      @errors = ActiveModel::Errors.new(self).add(:base, message: e.message)
       self
     ensure
       @success = @errors.blank?
