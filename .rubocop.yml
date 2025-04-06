@@ -16,6 +16,12 @@ AllCops:
   NewCops: enable
   SuggestExtensions: false
 
+FactoryBot/ExcessiveCreateList:
+  Enabled: false
+
+RSpec/AnyInstance:
+  Enabled: false
+
 Style/FrozenStringLiteralComment:
   Enabled: false
 
