@@ -30,7 +30,7 @@ gem 'with_advisory_lock', '~> 5.1.0'
 
 group :development, :test do
   gem 'annotate'
-  gem 'dotenv-rails', '~> 3.1.7'
+  gem 'dotenv-rails', '~> 3.1.8'
   gem 'factory_bot_rails'
   # Static analysis for security vulnerabilities [https://brakemanscanner.org/]
   gem 'brakeman', require: false
