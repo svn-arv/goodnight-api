@@ -44,7 +44,7 @@ group :development, :test do
   # Best practices for Rails applications [https://github.com/rails/rails_best_practices]
   gem 'rails_best_practices', require: false
   # Test framework for Rails applications [https://rspec.info/]
-  gem 'rspec-rails', '~> 7.1.1'
+  gem 'rspec-rails', '~> 8.0.0'
   # Code style for Ruby [https://rubocop.org/]
   gem 'rubocop'
   gem 'rubocop-factory_bot'
