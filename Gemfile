@@ -26,7 +26,7 @@ gem 'kaminari'
 # DB Locking for Rails [https://github.com/ankane/with_advisory_lock]
 # SQLite: File Locks
 # PostgreSQL & MySQL: Table/Row Locks
-gem 'with_advisory_lock', '~> 5.1.0'
+gem 'with_advisory_lock', '~> 5.3.0'
 
 group :development, :test do
   gem 'annotate'
